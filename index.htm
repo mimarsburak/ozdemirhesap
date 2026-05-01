@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Özdemir Motors - Mobil Uyumlu</title>
+  <style>
+    /* Temel Sıfırlama */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background-color: #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Mobil Görünüm İçin Ölçeklendirme */
+    .outer-container {
+      width: 100%;
+      overflow-x: auto; /* Telefondan kaydırarak bakabilmek için */
+      display: flex;
+      justify-content: center;
+    }
+
+    /* A4 Kağıt Konteyner */
+    .paper {
+      width: 210mm;
+      min-width: 210mm; /* Telefondan genişliğin bozulmaması için */
+      height: 297mm;
+      background-image: url('resimresim.jpg');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-color: white;
+      position: relative;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+
+    /* Giriş Alanları */
+    input {
+      position: absolute;
+      border: none;
+      background: rgba(200, 220, 255, 0.1);
+      font-size: 14px;
+      padding: 0 5px;
+      outline: none;
+    }
+
+    input:focus { background: rgba(255, 255, 255, 0.9); border: 1px solid #007bff; }
+
+    /* Hizalamalar (Girdiğiniz koordinatlar korunmuştur) */
+    .tarih { top: 34px; left: 615px; width: 132px; height: 25px; text-align: center; }
+    .plaka { top: 67px; left: 615px; width: 132px; height: 25px; text-align: center; font-weight: bold; }
+    .marka { top: 100px; left: 615px; width: 132px; height: 25px; text-align: center; }
+    .km { top: 132px; left: 615px; width: 132px; height: 25px; text-align: center; }
+    .sonraki { top: 164px; left: 615px; width: 132px; height: 25px; text-align: center; }
+    .ad { top: 210px; left: 125px; width: 350px; height: 26px; }
+    .tel { top: 210px; left: 565px; width: 185px; height: 26px; }
+    .row-desc { left: 45px; width: 570px; height: 25px; }
+    .row-price { left: 625px; width: 140px; height: 25px; text-align: right; padding-right: 15px; font-weight: bold; }
+    .total-area { left: 570px; width: 145px; height: 26px; text-align: right; padding-right: 15px; font-weight: bold; }
+    .f-total { top: 976px; }
+    .f-tahsil { top: 1004px; }
+    .f-kalan { top: 1033px; color: red; }
+
+    /* Butonlar */
+    .nav { 
+      margin: 20px 0; 
+      display: flex; 
+      gap: 10px; 
+      position: sticky; 
+      bottom: 20px; 
+      z-index: 100;
+    }
+    button { padding: 15px 30px; cursor: pointer; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .print-btn { background-color: #28a745; }
+    .clear-btn { background-color: #dc3545; }
+
+    /* YAZDIRMA AYARLARI (Mobil ve Desktop İçin) */
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: white; padding: 0; margin: 0; }
+      .nav { display: none; }
+      .outer-container { overflow: visible; display: block; }
+      .paper { 
+        box-shadow: none; 
+        width: 210mm;
+        height: 297mm;
+        -webkit-print-color-adjust: exact !important; 
+        print-color-adjust: exact !important; 
+      }
+      input { background: transparent !important; }
+      input::placeholder { color: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="outer-container">
+    <div class="paper">
+      <!-- Üst Alanlar -->
+      <input type="text" class="tarih" id="tarih">
+      <input type="text" class="plaka" placeholder="PLAKA">
+      <input type="text" class="marka" placeholder="MARKA/MODEL">
+      <input type="text" class="km" placeholder="KM">
+      <input type="text" class="sonraki" placeholder="GELECEK BAKIM">
+
+      <!-- Müşteri -->
+      <input type="text" class="ad" placeholder="Müşteri Adı Soyadı">
+      <input type="text" class="tel" placeholder="Telefon">
+
+      <!-- Dinamik Satırlar -->
+      <div id="dynamic-lines"></div>
+
+      <!-- Alt Toplamlar -->
+      <input type="text" class="total-area f-total" id="toplam" readonly>
+      <input type="text" class="total-area f-tahsil" id="tahsil" placeholder="0.00" oninput="calculate()">
+      <input type="text" class="total-area f-kalan" id="kalan" readonly>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="print-btn" onclick="window.print()">YAZDIR / PDF YAP</button>
+    <button class="clear-btn" onclick="if(confirm('Temizlensin mi?')) location.reload()">TEMİZLE</button>
+  </div>
+
+  <script>
+    const startY = 250.5;
+    const gap = 31.61;
+    const lineContainer = document.getElementById('dynamic-lines');
+
+    // 23 satır oluştur
+    for (let i = 0; i < 23; i++) {
+      const topPos = startY + (i * gap);
+      
+      const desc = document.createElement('input');
+      desc.className = 'row-desc';
+      desc.style.top = topPos + 'px';
+      desc.placeholder = (i+1) + ". İşlem";
+      lineContainer.appendChild(desc);
+
+      const price = document.createElement('input');
+      price.className = 'row-price price-in';
+      price.type = 'number'; // Mobilde sayı klavyesi açılması için
+      price.step = '0.01';
+      price.style.top = topPos + 'px';
+      price.oninput = calculate;
+      lineContainer.appendChild(price);
+    }
+
+    function calculate() {
+      let total = 0;
+      document.querySelectorAll('.price-in').forEach(input => {
+        total += parseFloat(input.value) || 0;
+      });
+
+      const tahsil = parseFloat(document.getElementById('tahsil').value) || 0;
+      
+      document.getElementById('toplam').value = total.toFixed(2) + " ₺";
+      document.getElementById('kalan').value = (total - tahsil).toFixed(2) + " ₺";
+    }
+
+    window.onload = () => {
+      document.getElementById('tarih').value = new Date().toLocaleDateString('tr-TR');
+    };
+  </script>
+</body>
+</html>
