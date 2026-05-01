@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Özdemir Motors - Mobil Uyumlu</title>
+  <title>Özdemir Motors - Tek Sayfa</title>
   <style>
     /* Temel Sıfırlama */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,18 +17,16 @@
       font-family: Arial, sans-serif;
     }
 
-    /* Mobil Görünüm İçin Ölçeklendirme */
     .outer-container {
       width: 100%;
-      overflow-x: auto; /* Telefondan kaydırarak bakabilmek için */
+      overflow-x: auto;
       display: flex;
       justify-content: center;
     }
 
-    /* A4 Kağıt Konteyner */
     .paper {
       width: 210mm;
-      min-width: 210mm; /* Telefondan genişliğin bozulmaması için */
+      min-width: 210mm;
       height: 297mm;
       background-image: url('resimresim.jpg');
       background-size: 100% 100%;
@@ -38,7 +36,6 @@
       box-shadow: 0 0 15px rgba(0,0,0,0.5);
     }
 
-    /* Giriş Alanları */
     input {
       position: absolute;
       border: none;
@@ -50,7 +47,7 @@
 
     input:focus { background: rgba(255, 255, 255, 0.9); border: 1px solid #007bff; }
 
-    /* Hizalamalar (Girdiğiniz koordinatlar korunmuştur) */
+    /* Koordinatlar */
     .tarih { top: 34px; left: 615px; width: 132px; height: 25px; text-align: center; }
     .plaka { top: 67px; left: 615px; width: 132px; height: 25px; text-align: center; font-weight: bold; }
     .marka { top: 100px; left: 615px; width: 132px; height: 25px; text-align: center; }
@@ -60,12 +57,12 @@
     .tel { top: 210px; left: 565px; width: 185px; height: 26px; }
     .row-desc { left: 45px; width: 570px; height: 25px; }
     .row-price { left: 625px; width: 140px; height: 25px; text-align: right; padding-right: 15px; font-weight: bold; }
+    
     .total-area { left: 570px; width: 145px; height: 26px; text-align: right; padding-right: 15px; font-weight: bold; }
     .f-total { top: 976px; }
     .f-tahsil { top: 1004px; }
     .f-kalan { top: 1033px; color: red; }
 
-    /* Butonlar */
     .nav { 
       margin: 20px 0; 
       display: flex; 
@@ -78,9 +75,16 @@
     .print-btn { background-color: #28a745; }
     .clear-btn { background-color: #dc3545; }
 
-    /* YAZDIRMA AYARLARI (Mobil ve Desktop İçin) */
+    /* YAZDIRMA AYARLARI */
     @media print {
-      @page { size: A4; margin: 0; }
+      @page { 
+        size: A4; 
+        margin: 0; /* Boşlukları tamamen sıfırla */
+      }
+      html, body { 
+        height: 100%; 
+        overflow: hidden; /* Dışarı taşmayı engelle */
+      }
       body { background: white; padding: 0; margin: 0; }
       .nav { display: none; }
       .outer-container { overflow: visible; display: block; }
@@ -88,11 +92,13 @@
         box-shadow: none; 
         width: 210mm;
         height: 297mm;
+        max-height: 297mm; /* Boyutu sabitle */
+        overflow: hidden; 
+        position: relative;
         -webkit-print-color-adjust: exact !important; 
         print-color-adjust: exact !important; 
       }
       input { background: transparent !important; }
-      input::placeholder { color: transparent; }
     }
   </style>
 </head>
@@ -100,24 +106,20 @@
 
   <div class="outer-container">
     <div class="paper">
-      <!-- Üst Alanlar -->
       <input type="text" class="tarih" id="tarih">
       <input type="text" class="plaka" placeholder="PLAKA">
       <input type="text" class="marka" placeholder="MARKA/MODEL">
       <input type="text" class="km" placeholder="KM">
       <input type="text" class="sonraki" placeholder="GELECEK BAKIM">
 
-      <!-- Müşteri -->
       <input type="text" class="ad" placeholder="Müşteri Adı Soyadı">
       <input type="text" class="tel" placeholder="Telefon">
 
-      <!-- Dinamik Satırlar -->
       <div id="dynamic-lines"></div>
 
-      <!-- Alt Toplamlar -->
-      <input type="text" class="total-area f-total" id="toplam" readonly>
+      <input type="text" class="total-area f-total" id="toplam" placeholder="0.00" oninput="setManual('toplam')">
       <input type="text" class="total-area f-tahsil" id="tahsil" placeholder="0.00" oninput="calculate()">
-      <input type="text" class="total-area f-kalan" id="kalan" readonly>
+      <input type="text" class="total-area f-kalan" id="kalan" placeholder="0.00" oninput="setManual('kalan')">
     </div>
   </div>
 
@@ -130,11 +132,12 @@
     const startY = 250.5;
     const gap = 31.61;
     const lineContainer = document.getElementById('dynamic-lines');
+    
+    let isManualTotal = false;
+    let isManualKalan = false;
 
-    // 23 satır oluştur
     for (let i = 0; i < 23; i++) {
       const topPos = startY + (i * gap);
-      
       const desc = document.createElement('input');
       desc.className = 'row-desc';
       desc.style.top = topPos + 'px';
@@ -143,23 +146,37 @@
 
       const price = document.createElement('input');
       price.className = 'row-price price-in';
-      price.type = 'number'; // Mobilde sayı klavyesi açılması için
+      price.type = 'number';
       price.step = '0.01';
       price.style.top = topPos + 'px';
       price.oninput = calculate;
       lineContainer.appendChild(price);
     }
 
+    function setManual(id) {
+      const val = document.getElementById(id).value;
+      if (id === 'toplam') isManualTotal = val.length > 0;
+      if (id === 'kalan') isManualKalan = val.length > 0;
+      calculate();
+    }
+
     function calculate() {
-      let total = 0;
+      let sum = 0;
       document.querySelectorAll('.price-in').forEach(input => {
-        total += parseFloat(input.value) || 0;
+        sum += parseFloat(input.value) || 0;
       });
 
-      const tahsil = parseFloat(document.getElementById('tahsil').value) || 0;
-      
-      document.getElementById('toplam').value = total.toFixed(2) + " ₺";
-      document.getElementById('kalan').value = (total - tahsil).toFixed(2) + " ₺";
+      const tahsilVal = parseFloat(document.getElementById('tahsil').value) || 0;
+
+      if (!isManualTotal) {
+        document.getElementById('toplam').value = sum > 0 ? sum.toFixed(2) : "";
+      }
+
+      if (!isManualKalan) {
+        const currentTotal = isManualTotal ? parseFloat(document.getElementById('toplam').value) || 0 : sum;
+        const netKalan = currentTotal - tahsilVal;
+        document.getElementById('kalan').value = netKalan !== 0 ? netKalan.toFixed(2) : "";
+      }
     }
 
     window.onload = () => {
