@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=210mm, user-scalable=no">
-  <title>Özdemir Motors - Mobil Fix</title>
+  <meta name="viewport" content="width=210mm, user-scalable=yes">
+  <title>Özdemir Motors - Yazdırma Fix</title>
   <style>
     /* Temel Sıfırlama */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -16,38 +16,25 @@
       font-family: Arial, sans-serif;
     }
 
-    /* Kağıdı mobilde düzgün göstermek için dış kapsayıcı */
     .outer-container {
       width: 100%;
       display: flex;
       justify-content: center;
       padding: 20px 0;
-      overflow-x: auto;
     }
 
     .paper {
       width: 210mm;
       height: 297mm;
-      min-width: 210mm;
-      min-height: 297mm;
       background-image: url('resimresim.jpg');
       background-size: 100% 100%;
       background-repeat: no-repeat;
       background-color: white;
       position: relative;
       box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      /* Mobilde ekran görüntüsündeki gibi dağılmaması için */
-      transform-origin: top center;
     }
 
-    /* Mobilde çok büyük durmaması için ekran ölçeği */
-    @media screen and (max-width: 500px) {
-      .paper {
-        transform: scale(0.45); /* Ekran genişliğine göre ayarlanabilir */
-        margin-bottom: -150mm; /* Boşluğu kapatmak için */
-      }
-    }
-
+    /* Mobilde Giriş Alanlarının Görünümü */
     input {
       position: absolute;
       border: none;
@@ -55,9 +42,10 @@
       font-size: 14px;
       padding: 0 5px;
       outline: none;
+      color: black;
     }
 
-    /* Koordinatlar (Tam olarak görselinize göre) */
+    /* Koordinatlar (Görselinize tam uyum için) */
     .tarih { top: 34px; left: 615px; width: 132px; height: 25px; text-align: center; }
     .plaka { top: 67px; left: 615px; width: 132px; height: 25px; text-align: center; font-weight: bold; }
     .marka { top: 100px; left: 615px; width: 132px; height: 25px; text-align: center; }
@@ -73,25 +61,25 @@
     .f-tahsil { top: 1004px; }
     .f-kalan { top: 1033px; color: red; }
 
-    /* Butonlar */
+    /* Navigasyon Paneli */
     .nav { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 1000; }
-    button { padding: 12px 25px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    button { padding: 15px 30px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
     .print-btn { background-color: #28a745; }
     .clear-btn { background-color: #dc3545; }
 
-    /* YAZDIRMA AYARLARI */
+    /* YAZDIRMA AYARLARI (BASİTLEŞTİRİLDİ) */
     @media print {
       @page { size: A4; margin: 0; }
-      body { background: white; }
-      .nav { display: none; }
-      .outer-container { padding: 0; margin: 0; display: block; }
+      body, html { background: white !important; margin: 0; padding: 0; }
+      .nav { display: none !important; }
+      .outer-container { padding: 0 !important; margin: 0 !important; display: block !important; }
       .paper { 
-        box-shadow: none; 
-        transform: none !important; 
-        margin: 0 !important;
-        position: fixed;
-        top: 0;
-        left: 0;
+        box-shadow: none !important; 
+        position: relative !important; 
+        margin: 0 auto !important;
+        left: 0 !important;
+        top: 0 !important;
+        display: block !important;
       }
       input { background: transparent !important; }
     }
@@ -100,7 +88,7 @@
 <body>
 
   <div class="outer-container">
-    <div class="paper">
+    <div class="paper" id="printable-area">
       <input type="text" class="tarih" id="tarih">
       <input type="text" class="plaka" placeholder="PLAKA">
       <input type="text" class="marka" placeholder="MARKA/MODEL">
@@ -117,18 +105,21 @@
 
   <div class="nav">
     <button class="print-btn" onclick="window.print()">YAZDIR / PDF</button>
-    <button class="clear-btn" onclick="if(confirm('Temizlensin mi?')) location.reload()">TEMİZLE</button>
+    <button class="clear-btn" onclick="if(confirm('Veriler silinsin mi?')) location.reload()">TEMİZLE</button>
   </div>
 
   <script>
+    // Satır başlangıç ve aralıkları
     const startY = 250.5;
     const gap = 31.61;
     const lineContainer = document.getElementById('dynamic-lines');
     let isManualTotal = false;
     let isManualKalan = false;
 
+    // 23 adet işlem satırı oluşturma
     for (let i = 0; i < 23; i++) {
       const topPos = startY + (i * gap);
+      
       const desc = document.createElement('input');
       desc.className = 'row-desc';
       desc.style.top = topPos + 'px';
@@ -157,8 +148,13 @@
         let val = input.value.replace(',', '.');
         sum += parseFloat(val) || 0;
       });
+
       const tahsilVal = parseFloat(document.getElementById('tahsil').value.replace(',', '.')) || 0;
-      if (!isManualTotal) document.getElementById('toplam').value = sum > 0 ? sum.toFixed(2) : "";
+
+      if (!isManualTotal) {
+        document.getElementById('toplam').value = sum > 0 ? sum.toFixed(2) : "";
+      }
+
       if (!isManualKalan) {
         const currentTotal = isManualTotal ? parseFloat(document.getElementById('toplam').value.replace(',', '.')) || 0 : sum;
         const netKalan = currentTotal - tahsilVal;
@@ -166,7 +162,9 @@
       }
     }
 
-    window.onload = () => { document.getElementById('tarih').value = new Date().toLocaleDateString('tr-TR'); };
+    window.onload = () => {
+      document.getElementById('tarih').value = new Date().toLocaleDateString('tr-TR');
+    };
   </script>
 </body>
 </html>
