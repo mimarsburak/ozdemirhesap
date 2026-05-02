@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=210mm, user-scalable=no">
   <title>Özdemir Motors - Mobil Fix</title>
   <style>
     /* Temel Sıfırlama */
@@ -14,40 +14,50 @@
       flex-direction: column;
       align-items: center;
       font-family: Arial, sans-serif;
-      overflow-x: hidden;
     }
 
-    /* Ekran Görünümü Konteynırı */
+    /* Kağıdı mobilde düzgün göstermek için dış kapsayıcı */
     .outer-container {
       width: 100%;
       display: flex;
       justify-content: center;
-      padding: 10px 0;
-      overflow-x: auto; /* Telefondan kaydırarak bakabilmek için */
+      padding: 20px 0;
+      overflow-x: auto;
     }
 
     .paper {
       width: 210mm;
       height: 297mm;
       min-width: 210mm;
+      min-height: 297mm;
       background-image: url('resimresim.jpg');
       background-size: 100% 100%;
       background-repeat: no-repeat;
       background-color: white;
       position: relative;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      /* Mobilde ekran görüntüsündeki gibi dağılmaması için */
+      transform-origin: top center;
+    }
+
+    /* Mobilde çok büyük durmaması için ekran ölçeği */
+    @media screen and (max-width: 500px) {
+      .paper {
+        transform: scale(0.45); /* Ekran genişliğine göre ayarlanabilir */
+        margin-bottom: -150mm; /* Boşluğu kapatmak için */
+      }
     }
 
     input {
       position: absolute;
       border: none;
-      background: rgba(200, 220, 255, 0.1);
+      background: rgba(0, 123, 255, 0.05);
       font-size: 14px;
       padding: 0 5px;
       outline: none;
     }
 
-    /* Koordinatlar */
+    /* Koordinatlar (Tam olarak görselinize göre) */
     .tarih { top: 34px; left: 615px; width: 132px; height: 25px; text-align: center; }
     .plaka { top: 67px; left: 615px; width: 132px; height: 25px; text-align: center; font-weight: bold; }
     .marka { top: 100px; left: 615px; width: 132px; height: 25px; text-align: center; }
@@ -57,36 +67,33 @@
     .tel { top: 210px; left: 565px; width: 185px; height: 26px; }
     .row-desc { left: 45px; width: 570px; height: 25px; }
     .row-price { left: 625px; width: 140px; height: 25px; text-align: right; padding-right: 15px; font-weight: bold; }
+    
     .total-area { left: 570px; width: 145px; height: 26px; text-align: right; padding-right: 15px; font-weight: bold; }
     .f-total { top: 976px; }
     .f-tahsil { top: 1004px; }
     .f-kalan { top: 1033px; color: red; }
 
-    /* Buton Paneli */
-    .nav { 
-      position: fixed;
-      bottom: 20px;
-      display: flex;
-      gap: 10px;
-      z-index: 999;
-    }
-    button { padding: 12px 24px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    /* Butonlar */
+    .nav { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 1000; }
+    button { padding: 12px 25px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .print-btn { background-color: #28a745; }
     .clear-btn { background-color: #dc3545; }
 
     /* YAZDIRMA AYARLARI */
     @media print {
       @page { size: A4; margin: 0; }
-      html, body { background: white; width: 210mm; height: 297mm; overflow: hidden; }
+      body { background: white; }
       .nav { display: none; }
-      .outer-container { padding: 0; margin: 0; }
+      .outer-container { padding: 0; margin: 0; display: block; }
       .paper { 
         box-shadow: none; 
+        transform: none !important; 
+        margin: 0 !important;
         position: fixed;
         top: 0;
         left: 0;
-        zoom: 0.96; /* iOS'ta sığdırmak için */
       }
+      input { background: transparent !important; }
     }
   </style>
 </head>
@@ -99,12 +106,9 @@
       <input type="text" class="marka" placeholder="MARKA/MODEL">
       <input type="text" class="km" placeholder="KM">
       <input type="text" class="sonraki" placeholder="GELECEK BAKIM">
-
       <input type="text" class="ad" placeholder="Müşteri Adı Soyadı">
       <input type="text" class="tel" placeholder="Telefon">
-
       <div id="dynamic-lines"></div>
-
       <input type="text" class="total-area f-total" id="toplam" placeholder="0.00" oninput="setManual('toplam')">
       <input type="text" class="total-area f-tahsil" id="tahsil" placeholder="0.00" inputmode="decimal" oninput="calculate()">
       <input type="text" class="total-area f-kalan" id="kalan" placeholder="0.00" oninput="setManual('kalan')">
@@ -153,14 +157,8 @@
         let val = input.value.replace(',', '.');
         sum += parseFloat(val) || 0;
       });
-
-      const tahsilStr = document.getElementById('tahsil').value.replace(',', '.');
-      const tahsilVal = parseFloat(tahsilStr) || 0;
-
-      if (!isManualTotal) {
-        document.getElementById('toplam').value = sum > 0 ? sum.toFixed(2) : "";
-      }
-
+      const tahsilVal = parseFloat(document.getElementById('tahsil').value.replace(',', '.')) || 0;
+      if (!isManualTotal) document.getElementById('toplam').value = sum > 0 ? sum.toFixed(2) : "";
       if (!isManualKalan) {
         const currentTotal = isManualTotal ? parseFloat(document.getElementById('toplam').value.replace(',', '.')) || 0 : sum;
         const netKalan = currentTotal - tahsilVal;
@@ -168,9 +166,7 @@
       }
     }
 
-    window.onload = () => {
-      document.getElementById('tarih').value = new Date().toLocaleDateString('tr-TR');
-    };
+    window.onload = () => { document.getElementById('tarih').value = new Date().toLocaleDateString('tr-TR'); };
   </script>
 </body>
 </html>
