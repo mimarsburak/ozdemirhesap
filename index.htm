@@ -2,30 +2,33 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=210mm, user-scalable=yes">
-  <title>Özdemir Motors - Yazdırma Fix</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Özdemir Motors - Final Fix</title>
   <style>
     /* Temel Sıfırlama */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     
     body {
-      background-color: #444;
+      background-color: #555;
       display: flex;
       flex-direction: column;
       align-items: center;
-      font-family: Arial, sans-serif;
+      font-family: 'Helvetica', Arial, sans-serif;
     }
 
+    /* Kağıt Konteynırı */
     .outer-container {
       width: 100%;
       display: flex;
       justify-content: center;
       padding: 20px 0;
+      overflow-x: auto;
     }
 
     .paper {
       width: 210mm;
       height: 297mm;
+      min-width: 210mm;
       background-image: url('resimresim.jpg');
       background-size: 100% 100%;
       background-repeat: no-repeat;
@@ -34,18 +37,17 @@
       box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
 
-    /* Mobilde Giriş Alanlarının Görünümü */
     input {
       position: absolute;
       border: none;
-      background: rgba(0, 123, 255, 0.05);
+      background: rgba(0, 100, 255, 0.03); /* Ekranda kutuları görebilmeniz için hafif renk */
       font-size: 14px;
       padding: 0 5px;
       outline: none;
       color: black;
     }
 
-    /* Koordinatlar (Görselinize tam uyum için) */
+    /* Üst Bilgiler */
     .tarih { top: 34px; left: 615px; width: 132px; height: 25px; text-align: center; }
     .plaka { top: 67px; left: 615px; width: 132px; height: 25px; text-align: center; font-weight: bold; }
     .marka { top: 100px; left: 615px; width: 132px; height: 25px; text-align: center; }
@@ -53,33 +55,34 @@
     .sonraki { top: 164px; left: 615px; width: 132px; height: 25px; text-align: center; }
     .ad { top: 210px; left: 125px; width: 350px; height: 26px; }
     .tel { top: 210px; left: 565px; width: 185px; height: 26px; }
+
+    /* İşlem Satırları */
     .row-desc { left: 45px; width: 570px; height: 25px; }
     .row-price { left: 625px; width: 140px; height: 25px; text-align: right; padding-right: 15px; font-weight: bold; }
     
+    /* Alt Toplam Alanları - Kayma Düzeltildi */
     .total-area { left: 570px; width: 145px; height: 26px; text-align: right; padding-right: 15px; font-weight: bold; }
-    .f-total { top: 976px; }
-    .f-tahsil { top: 1004px; }
-    .f-kalan { top: 1033px; color: red; }
+    .f-total { top: 979px; } /* Görselinize göre 3px aşağı alındı */
+    .f-tahsil { top: 1007px; }
+    .f-kalan { top: 1035px; color: red; }
 
-    /* Navigasyon Paneli */
-    .nav { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 1000; }
-    button { padding: 15px 30px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+    /* Navigasyon */
+    .nav { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 9999; }
+    button { padding: 15px 30px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     .print-btn { background-color: #28a745; }
     .clear-btn { background-color: #dc3545; }
 
-    /* YAZDIRMA AYARLARI (BASİTLEŞTİRİLDİ) */
+    /* YAZDIRMA AYARLARI */
     @media print {
       @page { size: A4; margin: 0; }
-      body, html { background: white !important; margin: 0; padding: 0; }
+      body, html { background: white !important; height: 297mm; overflow: hidden; }
       .nav { display: none !important; }
-      .outer-container { padding: 0 !important; margin: 0 !important; display: block !important; }
+      .outer-container { padding: 0 !important; margin: 0 !important; }
       .paper { 
         box-shadow: none !important; 
-        position: relative !important; 
-        margin: 0 auto !important;
-        left: 0 !important;
-        top: 0 !important;
-        display: block !important;
+        margin: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
       }
       input { background: transparent !important; }
     }
@@ -88,7 +91,8 @@
 <body>
 
   <div class="outer-container">
-    <div class="paper" id="printable-area">
+    <div class="paper">
+      <!-- Üst Alanlar -->
       <input type="text" class="tarih" id="tarih">
       <input type="text" class="plaka" placeholder="PLAKA">
       <input type="text" class="marka" placeholder="MARKA/MODEL">
@@ -96,7 +100,11 @@
       <input type="text" class="sonraki" placeholder="GELECEK BAKIM">
       <input type="text" class="ad" placeholder="Müşteri Adı Soyadı">
       <input type="text" class="tel" placeholder="Telefon">
+
+      <!-- Satırlar -->
       <div id="dynamic-lines"></div>
+
+      <!-- Alt Toplamlar -->
       <input type="text" class="total-area f-total" id="toplam" placeholder="0.00" oninput="setManual('toplam')">
       <input type="text" class="total-area f-tahsil" id="tahsil" placeholder="0.00" inputmode="decimal" oninput="calculate()">
       <input type="text" class="total-area f-kalan" id="kalan" placeholder="0.00" oninput="setManual('kalan')">
@@ -105,18 +113,18 @@
 
   <div class="nav">
     <button class="print-btn" onclick="window.print()">YAZDIR / PDF</button>
-    <button class="clear-btn" onclick="if(confirm('Veriler silinsin mi?')) location.reload()">TEMİZLE</button>
+    <button class="clear-btn" onclick="if(confirm('Temizlensin mi?')) location.reload()">TEMİZLE</button>
   </div>
 
   <script>
-    // Satır başlangıç ve aralıkları
-    const startY = 250.5;
-    const gap = 31.61;
+    // Koordinat Kalibrasyonu
+    const startY = 250.5; // İlk satır yüksekliği
+    const gap = 31.61;    // Satır aralığı
     const lineContainer = document.getElementById('dynamic-lines');
     let isManualTotal = false;
     let isManualKalan = false;
 
-    // 23 adet işlem satırı oluşturma
+    // 23 Satır Oluştur
     for (let i = 0; i < 23; i++) {
       const topPos = startY + (i * gap);
       
