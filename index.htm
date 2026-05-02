@@ -40,7 +40,7 @@
     input {
       position: absolute;
       border: none;
-      background: rgba(0, 100, 255, 0.03); /* Ekranda kutuları görebilmeniz için hafif renk */
+      background: rgba(0, 100, 255, 0.03);
       font-size: 14px;
       padding: 0 5px;
       outline: none;
@@ -60,16 +60,18 @@
     .row-desc { left: 45px; width: 570px; height: 25px; }
     .row-price { left: 625px; width: 140px; height: 25px; text-align: right; padding-right: 15px; font-weight: bold; }
     
-    /* Alt Toplam Alanları - Kayma Düzeltildi */
+    /* Alt Toplam Alanları */
     .total-area { left: 570px; width: 145px; height: 26px; text-align: right; padding-right: 15px; font-weight: bold; }
-    .f-total { top: 979px; } /* Görselinize göre 3px aşağı alındı */
+    .f-total { top: 979px; }
     .f-tahsil { top: 1007px; }
     .f-kalan { top: 1035px; color: red; }
 
     /* Navigasyon */
     .nav { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 9999; }
-    button { padding: 15px 30px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    button { padding: 15px 30px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.3s; }
+    button:active { transform: scale(0.95); }
     .print-btn { background-color: #28a745; }
+    .whatsapp-btn { background-color: #25D366; }
     .clear-btn { background-color: #dc3545; }
 
     /* YAZDIRMA AYARLARI */
@@ -99,7 +101,7 @@
       <input type="text" class="km" placeholder="KM">
       <input type="text" class="sonraki" placeholder="GELECEK BAKIM">
       <input type="text" class="ad" placeholder="Müşteri Adı Soyadı">
-      <input type="text" class="tel" placeholder="Telefon">
+      <input type="text" class="tel" id="tel" placeholder="Telefon (905...)">
 
       <!-- Satırlar -->
       <div id="dynamic-lines"></div>
@@ -113,13 +115,14 @@
 
   <div class="nav">
     <button class="print-btn" onclick="window.print()">YAZDIR / PDF</button>
+    <button class="whatsapp-btn" onclick="sendWhatsApp()">WHATSAPP GÖNDER</button>
     <button class="clear-btn" onclick="if(confirm('Temizlensin mi?')) location.reload()">TEMİZLE</button>
   </div>
 
   <script>
     // Koordinat Kalibrasyonu
-    const startY = 250.5; // İlk satır yüksekliği
-    const gap = 31.61;    // Satır aralığı
+    const startY = 250.5; 
+    const gap = 31.61;    
     const lineContainer = document.getElementById('dynamic-lines');
     let isManualTotal = false;
     let isManualKalan = false;
@@ -168,6 +171,45 @@
         const netKalan = currentTotal - tahsilVal;
         document.getElementById('kalan').value = netKalan !== 0 ? netKalan.toFixed(2) : "";
       }
+    }
+
+    // WHATSAPP GÖNDERME FONKSİYONU
+    function sendWhatsApp() {
+      const tarih = document.getElementById('tarih').value;
+      const plaka = document.querySelector('.plaka').value || "---";
+      const marka = document.querySelector('.marka').value || "";
+      const ad = document.querySelector('.ad').value || "Değerli Müşterimiz";
+      const tel = document.getElementById('tel').value.replace(/\D/g, ''); // Sadece rakamlar
+      
+      let islemler = "";
+      const rows = document.querySelectorAll('.row-desc');
+      const prices = document.querySelectorAll('.price-in');
+      
+      rows.forEach((row, index) => {
+        if(row.value.trim() !== "") {
+          const p = prices[index].value || "0";
+          islemler += `✅ ${row.value}: ${p} TL\n`;
+        }
+      });
+
+      const toplam = document.getElementById('toplam').value || "0";
+      const kalan = document.getElementById('kalan').value || "0";
+
+      let mesaj = `*ÖZDEMİR MOTORS SERVİS FORMU*\n`;
+      mesaj += `------------------------------\n`;
+      mesaj += `*Tarih:* ${tarih}\n`;
+      mesaj += `*Sayın:* ${ad}\n`;
+      mesaj += `*Araç:* ${plaka} ${marka}\n\n`;
+      mesaj += `*YAPILAN İŞLEMLER:*\n${islemler}\n`;
+      mesaj += `*TOPLAM:* ${toplam} TL\n`;
+      if(parseFloat(kalan) > 0) mesaj += `*KALAN BORÇ:* ${kalan} TL\n`;
+      mesaj += `------------------------------\n`;
+      mesaj += `_Bizi tercih ettiğiniz için teşekkür ederiz._`;
+
+      const encodedMesaj = encodeURIComponent(mesaj);
+      const link = `https://wa.me/${tel}?text=${encodedMesaj}`;
+      
+      window.open(link, '_blank');
     }
 
     window.onload = () => {
