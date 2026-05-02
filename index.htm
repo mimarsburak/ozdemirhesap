@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Özdemir Motors - Kesin Tek Sayfa</title>
+  <title>Özdemir Motors - Mobil Fix</title>
   <style>
     /* Temel Sıfırlama */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -13,23 +13,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 10px;
       font-family: Arial, sans-serif;
+      overflow-x: hidden;
     }
 
+    /* Ekran Görünümü Konteynırı */
     .outer-container {
       width: 100%;
       display: flex;
       justify-content: center;
+      padding: 10px 0;
+      overflow-x: auto; /* Telefondan kaydırarak bakabilmek için */
     }
 
     .paper {
       width: 210mm;
       height: 297mm;
+      min-width: 210mm;
       background-image: url('resimresim.jpg');
-      background-size: contain;
+      background-size: 100% 100%;
       background-repeat: no-repeat;
-      background-position: center;
       background-color: white;
       position: relative;
       box-shadow: 0 0 15px rgba(0,0,0,0.5);
@@ -44,7 +47,7 @@
       outline: none;
     }
 
-    /* Koordinatlar (Aynen korundu) */
+    /* Koordinatlar */
     .tarih { top: 34px; left: 615px; width: 132px; height: 25px; text-align: center; }
     .plaka { top: 67px; left: 615px; width: 132px; height: 25px; text-align: center; font-weight: bold; }
     .marka { top: 100px; left: 615px; width: 132px; height: 25px; text-align: center; }
@@ -59,37 +62,31 @@
     .f-tahsil { top: 1004px; }
     .f-kalan { top: 1033px; color: red; }
 
-    .nav { margin: 20px 0; display: flex; gap: 10px; }
-    button { padding: 15px 30px; cursor: pointer; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 16px; }
+    /* Buton Paneli */
+    .nav { 
+      position: fixed;
+      bottom: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 999;
+    }
+    button { padding: 12px 24px; cursor: pointer; border-radius: 50px; border: none; color: white; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     .print-btn { background-color: #28a745; }
     .clear-btn { background-color: #dc3545; }
 
-    /* YAZDIRMA AYARLARI - iOS İÇİN KRİTİK GÜNCELLEME */
+    /* YAZDIRMA AYARLARI */
     @media print {
-      @page { 
-        size: A4; 
-        margin: 0mm; /* Kenar boşluklarını sıfırla */
-      }
-      html, body { 
-        width: 210mm;
-        height: 297mm;
-        overflow: hidden;
-        background: white;
-      }
+      @page { size: A4; margin: 0; }
+      html, body { background: white; width: 210mm; height: 297mm; overflow: hidden; }
       .nav { display: none; }
-      .outer-container { padding: 0; margin: 0; display: block; }
+      .outer-container { padding: 0; margin: 0; }
       .paper { 
         box-shadow: none; 
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        zoom: 0.98; /* iOS'ta sığması için hafif küçültme */
-        page-break-after: avoid;
-        page-break-before: avoid;
+        zoom: 0.96; /* iOS'ta sığdırmak için */
       }
-      input { background: transparent !important; border: none !important; }
     }
   </style>
 </head>
@@ -102,17 +99,20 @@
       <input type="text" class="marka" placeholder="MARKA/MODEL">
       <input type="text" class="km" placeholder="KM">
       <input type="text" class="sonraki" placeholder="GELECEK BAKIM">
+
       <input type="text" class="ad" placeholder="Müşteri Adı Soyadı">
       <input type="text" class="tel" placeholder="Telefon">
+
       <div id="dynamic-lines"></div>
+
       <input type="text" class="total-area f-total" id="toplam" placeholder="0.00" oninput="setManual('toplam')">
-      <input type="text" class="total-area f-tahsil" id="tahsil" placeholder="0.00" oninput="calculate()">
+      <input type="text" class="total-area f-tahsil" id="tahsil" placeholder="0.00" inputmode="decimal" oninput="calculate()">
       <input type="text" class="total-area f-kalan" id="kalan" placeholder="0.00" oninput="setManual('kalan')">
     </div>
   </div>
 
   <div class="nav">
-    <button class="print-btn" onclick="window.print()">YAZDIR / PDF YAP</button>
+    <button class="print-btn" onclick="window.print()">YAZDIR / PDF</button>
     <button class="clear-btn" onclick="if(confirm('Temizlensin mi?')) location.reload()">TEMİZLE</button>
   </div>
 
@@ -133,7 +133,8 @@
 
       const price = document.createElement('input');
       price.className = 'row-price price-in';
-      price.type = 'number';
+      price.type = 'text';
+      price.inputmode = 'decimal';
       price.style.top = topPos + 'px';
       price.oninput = calculate;
       lineContainer.appendChild(price);
@@ -149,18 +150,27 @@
     function calculate() {
       let sum = 0;
       document.querySelectorAll('.price-in').forEach(input => {
-        sum += parseFloat(input.value) || 0;
+        let val = input.value.replace(',', '.');
+        sum += parseFloat(val) || 0;
       });
-      const tahsilVal = parseFloat(document.getElementById('tahsil').value) || 0;
-      if (!isManualTotal) document.getElementById('toplam').value = sum > 0 ? sum.toFixed(2) : "";
+
+      const tahsilStr = document.getElementById('tahsil').value.replace(',', '.');
+      const tahsilVal = parseFloat(tahsilStr) || 0;
+
+      if (!isManualTotal) {
+        document.getElementById('toplam').value = sum > 0 ? sum.toFixed(2) : "";
+      }
+
       if (!isManualKalan) {
-        const currentTotal = isManualTotal ? parseFloat(document.getElementById('toplam').value) || 0 : sum;
+        const currentTotal = isManualTotal ? parseFloat(document.getElementById('toplam').value.replace(',', '.')) || 0 : sum;
         const netKalan = currentTotal - tahsilVal;
         document.getElementById('kalan').value = netKalan !== 0 ? netKalan.toFixed(2) : "";
       }
     }
 
-    window.onload = () => { document.getElementById('tarih').value = new Date().toLocaleDateString('tr-TR'); };
+    window.onload = () => {
+      document.getElementById('tarih').value = new Date().toLocaleDateString('tr-TR');
+    };
   </script>
 </body>
 </html>
